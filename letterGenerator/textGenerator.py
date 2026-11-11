@@ -1,31 +1,30 @@
 import random
+from typing import TYPE_CHECKING
 
-from letterGenerator import LetterGenerator
-from letterGenerator.path import Path, PathCommand
+from geometry import Path, Role, Segment
 
+if TYPE_CHECKING:
+    from font import Character
 
-def add_error_value(value: float, error: float) -> float:
-    if value == 1:
-        return value
-    if value == 0:
-        return value
-    return value * (1 + (random.random() - 0.5) * error)
+TEXT_TEMPLATE = __file__.replace("textGenerator.py", "text_template.svg")
 
 
-def add_error(pathCommand: PathCommand, error: float) -> PathCommand:
-    return PathCommand(command=pathCommand.command_type, arguments=
-    [
-        [add_error_value(value, error) for value in argument]
-        for argument in pathCommand.arguments
-    ])
+def add_error(path: Path, error: float, rng: random.Random | None = None) -> Path:
+    """
+    Randomly vary every coordinate of the path by up to +/- error/2 (relative)
+    """
+    if not error:
+        return path
+    rng = rng or random
+    return path.map_coordinates(lambda value, role: value * (1 + (rng.random() - 0.5) * error))
 
 
 class TextGenerator:
     """
-    TextGenerator is a class that handle converting LetterGenerator to a text.
+    TextGenerator is a class that handle converting Characters to a text.
     It can adapt text to a A4 page and return to a new line whenever the text reach the end of the line
     """
-    _path: Path  # The list of Path command forming the SVG page
+    _segments: list[Segment]  # The path segments forming the SVG page
     _text: str  # String of all characters in the page (contains \n when it visually return to a new line)
     _autoReturnLine: bool  # Wether or not to return to a new line when reaching the margin
     _margin: float  # Margin of the page (all sides)
@@ -33,7 +32,7 @@ class TextGenerator:
 
     # Used to buffer a word before writing it. So the TextGenerator knows the final size of the word, and return
     # to a new line if needed
-    _blockBuffer: list[PathCommand]
+    _blockBuffer: list[Segment]
     _blockPointerX: float = 0
     _blockPointerY: float = 0
 
@@ -48,31 +47,30 @@ class TextGenerator:
         :param line_height: Height of a line (default 70)
         :param error: Variantion in values of path command
         """
-        self._path = Path("")
         self._text = ""
         self._autoReturnLine = auto_return_line
         self._margin = margin
         self._lineHeight = line_height
         self._blockBuffer = []
 
-        self._path.pathCommands.append(PathCommand(f"m {margin}, {margin}"))
+        self._segments = [Segment("m", (margin, margin))]
         self.pointerX = margin
         self.pointerY = margin
         self.error = error
 
-    def addLetter(self, letter: LetterGenerator, error: float = None):
+    def addLetter(self, letter: 'Character', error: float = None):
         """
         Append a letter in the text
-        :param letter: Letter to add
+        :param letter: Character to add
         """
-        self._addCharacter(letter.getPath().pathCommands, letter.getLetter(), letter.pathEndX, letter.pathEndY, error=error)
+        self._addCharacter(letter.path, letter.char, letter.advance_x, letter.advance_y, error=error)
 
     def addSpace(self, spaceSize: float = 20):
         """
         Add a space
         :param spaceSize: Size of the space (Default 20)
         """
-        self._addCharacter([PathCommand(f"m {spaceSize}, 0")], " ", spaceSize, 0, True)
+        self._addCharacter(Path([Segment("m", (spaceSize, 0))]), " ", spaceSize, 0, True)
 
     def addNewLine(self):
         """
@@ -80,13 +78,13 @@ class TextGenerator:
         """
         moveX: float = self._margin - self.pointerX - self._blockPointerX
         moveY: float = self._lineHeight
-        self._addCharacter([PathCommand(command='m', arguments=[[moveX, moveY]])], "\n", moveX, moveY, True)
+        self._addCharacter(Path([Segment("m", (moveX, moveY))]), "\n", moveX, moveY, True)
 
-    def _addCharacter(self, pathCommands: list[PathCommand], string: str, deltaX: float, deltaY: float,
+    def _addCharacter(self, path: Path, string: str, deltaX: float, deltaY: float,
                       endOfBlock: bool = False, error: float = None):
         """
         Add a character
-        :param pathCommands: List of the path command of the character
+        :param path: Relative path of the character
         :param string: The str representation
         :param deltaX: The path ending X
         :param deltaY: The path ending Y
@@ -94,9 +92,7 @@ class TextGenerator:
         """
         if error is None:
             error = self.error
-        self._blockBuffer += [
-            add_error(pathCommand, error) for pathCommand in pathCommands
-        ]
+        self._blockBuffer += add_error(path, error)
         self._text += string
         self._blockPointerX += deltaX
         self._blockPointerY += deltaY
@@ -111,8 +107,7 @@ class TextGenerator:
         if self._autoReturnLine:
             self._checkForNewLine(self._blockPointerX)
 
-        # Edit block Buffer to alter it
-        self._path.pathCommands += self._blockBuffer
+        self._segments += self._blockBuffer
         self.pointerX += self._blockPointerX
         self.pointerY += self._blockPointerY
 
@@ -122,6 +117,12 @@ class TextGenerator:
         if (self.pointerX + self._margin + blockSize) >= 2100:
             self.addNewLine()
 
+    def getPath(self) -> Path:
+        """
+        The path of the whole page (block buffer included)
+        """
+        return Path(self._segments + self._blockBuffer)
+
     def exportToTemplate(self, filepath: str):
         """
         Export the image to a template SVG with the path inside
@@ -129,9 +130,10 @@ class TextGenerator:
         """
         self._addBlock()  # In case the block buffer isn't empty
 
+        with open(TEXT_TEMPLATE, "r") as template:
+            content = template.read()
         with open(filepath, "w") as outFile:
-            with open(__file__.replace("textGenerator.py", "text_template.svg"), "r") as template:
-                outFile.write(template.read().replace('d=""', f'd="M0,0\n{self._path.toLine()}"'))
+            outFile.write(content.replace('d=""', f'd="M0,0\n{self.getPath().to_svg(separator=chr(10))}"'))
 
     def getText(self) -> str:
         """
