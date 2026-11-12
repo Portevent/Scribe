@@ -8,6 +8,8 @@ Reference: https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/
 import re
 from typing import Callable, Iterable, Iterator
 
+from geometry import flatten
+from geometry.bounding_box import BoundingBox
 from geometry.point import Point
 from geometry.role import ROLES, Role
 from geometry.segment import Segment
@@ -98,6 +100,23 @@ class Path:
             segments.append(Segment(segment.command.lower(), args))
         return Path(segments), Point(*end)
 
+    def to_absolute(self, start: Point = Point(0, 0)) -> 'Path':
+        """
+        Convert every segment to an absolute command
+        :param start: Pen position before the path
+        """
+        segments: list[Segment] = []
+        for segment, current, _ in self._walk(start):
+            if not segment.is_relative:
+                segments.append(segment)
+                continue
+            args = tuple(
+                value + current.x if role is Role.X else value + current.y if role is Role.Y else value
+                for value, role in zip(segment.args, segment.roles)
+            )
+            segments.append(Segment(segment.command.upper(), args))
+        return Path(segments)
+
     def map_coordinates(self, fn: Callable[[float, Role], float]) -> 'Path':
         """
         Apply fn to every x / y coordinate (radii, angles and flags are left untouched)
@@ -125,16 +144,80 @@ class Path:
 
     def scale(self, sx: float, sy: float | None = None) -> 'Path':
         """
-        Scale the path relative to the origin (uniformly if sy is omitted)
+        Scale the path relative to the origin (uniformly if sy is omitted).
+        A mirroring scale (sx * sy < 0) also flips arc sweep flags and angles.
+        Arc radii follow the axes, so a rotated arc under a non-uniform scale is only approximated.
         """
         sy = sx if sy is None else sy
+        mirrored = sx * sy < 0
         factors = {Role.X: sx, Role.RX: abs(sx), Role.Y: sy, Role.RY: abs(sy)}
-        return Path(
-            Segment(segment.command, tuple(
-                value * factors.get(role, 1) for value, role in zip(segment.args, segment.roles)
-            ))
-            for segment in self._segments
-        )
+
+        def scale_segment(segment: Segment) -> Segment:
+            args = [value * factors.get(role, 1) for value, role in zip(segment.args, segment.roles)]
+            if mirrored and segment.command in "Aa":
+                args[2] = -args[2]  # Rotation angle
+                args[4] = 1 - args[4]  # Sweep flag
+            return Segment(segment.command, tuple(args))
+
+        return Path(scale_segment(segment) for segment in self._segments)
+
+    def polylines(self, start: Point = Point(0, 0), steps: int = 16) -> list[list[Point]]:
+        """
+        Approximate the drawn parts of the path with points, one polyline per subpath.
+        Moves are not drawn: a subpath made only of a move gives no polyline.
+        :param start: Pen position before the path
+        :param steps: Number of points per curve
+        """
+        polylines: list[list[Point]] = []
+        current_line: list[Point] = []
+        previous_control: Point | None = None  # Last control point, for S / T reflections
+        previous_command = ""
+
+        for segment, current, end in self.to_absolute(start)._walk(start):
+            command, args = segment.command, segment.args
+            if command == "M":
+                if len(current_line) > 1:
+                    polylines.append(current_line)
+                current_line = [end]
+            else:
+                if not current_line:
+                    current_line = [current]
+                if command in "LHVZ":
+                    current_line.append(end)
+                elif command in "CS":
+                    if command == "C":
+                        control_1, control_2 = Point(args[0], args[1]), Point(args[2], args[3])
+                    else:
+                        control_1 = _reflect(previous_control, current) if previous_command in "CS" else current
+                        control_2 = Point(args[0], args[1])
+                    current_line += flatten.cubic(current, control_1, control_2, end, steps)
+                    previous_control = control_2
+                elif command in "QT":
+                    if command == "Q":
+                        control = Point(args[0], args[1])
+                    else:
+                        control = _reflect(previous_control, current) if previous_command in "QT" else current
+                    current_line += flatten.quadratic(current, control, end, steps)
+                    previous_control = control
+                elif command == "A":
+                    current_line += flatten.arc(current, args[0], args[1], args[2], bool(args[3]), bool(args[4]),
+                                                end, steps)
+                if command == "Z":  # A new subpath starts at the same point
+                    polylines.append(current_line)
+                    current_line = [end]
+            previous_command = command
+
+        if len(current_line) > 1:
+            polylines.append(current_line)
+        return polylines
+
+    def bounding_box(self, start: Point = Point(0, 0), steps: int = 16) -> BoundingBox | None:
+        """
+        Bounding box of the drawn parts of the path (moves excluded), None if nothing is drawn
+        :param start: Pen position before the path
+        :param steps: Number of points per curve used for the approximation
+        """
+        return BoundingBox.from_points(point for line in self.polylines(start, steps) for point in line)
 
     def to_svg(self, precision: int | None = 3, separator: str = " ") -> str:
         """
@@ -186,3 +269,9 @@ def _tokenize(raw: str, roles: tuple[Role, ...], offset: int) -> list[float]:
         pos = _SEPARATOR_RE.match(raw, pos).end()
     return values
 
+
+def _reflect(point: Point | None, center: Point) -> Point:
+    """Reflection of point around center (center itself if there is no point)"""
+    if point is None:
+        return center
+    return Point(2 * center.x - point.x, 2 * center.y - point.y)
