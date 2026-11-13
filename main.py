@@ -4,6 +4,7 @@ Write a text with a handwritten font into an SVG file.
 Examples:
   python3 main.py references/raw/mtg.svg "Hello world" -o hello.svg --width 100
   python3 main.py references/raw/SVG --text-file text.txt -o letter.svg --jitter 0.05
+  python3 main.py references/raw/mtg.svg "Hello" > hello.svg   (no -o: the SVG goes to the console)
 """
 import argparse
 import sys
@@ -12,7 +13,7 @@ from pathlib import Path as FilePath
 from font import Font
 from layout import LayoutSettings
 from parsers import InkscapeParser, SvgFolderParser
-from render import SvgRenderer, write_text
+from render import SvgRenderer, render_text
 
 
 def load_font(source: str) -> Font:
@@ -30,7 +31,7 @@ def main():
     text_source = arguments.add_mutually_exclusive_group(required=True)
     text_source.add_argument("text", nargs="?", help="text to write")
     text_source.add_argument("--text-file", help="read the text from this file (UTF-8)")
-    arguments.add_argument("-o", "--output", required=True, help="SVG file to write")
+    arguments.add_argument("-o", "--output", default="-", help="SVG file to write (default or '-': the console)")
 
     defaults = LayoutSettings()
     settings = arguments.add_argument_group("layout (lengths in millimetres)")
@@ -59,16 +60,24 @@ def main():
             on_missing="raise" if options.strict else "skip",
         )
         font = load_font(options.font)
-        layout = write_text(font, text, options.output, layout_settings, SvgRenderer(stroke_width=options.stroke_width))
+        document, layout = render_text(font, text, layout_settings, SvgRenderer(stroke_width=options.stroke_width))
+        to_console = options.output == "-"
+        if to_console:
+            sys.stdout.write(document)
+        else:
+            FilePath(options.output).write_text(document, encoding="utf-8")
     except (ValueError, KeyError, OSError) as error:
         sys.exit(f"Error: {error}")
 
-    print(f"Wrote {options.output}: {layout.width:.1f} x {layout.height:.1f} mm, {layout.lines} line(s), "
-          f"{len(layout.glyphs)} glyphs from font {font.name!r}")
+    # Keep the console output a valid SVG document: the report goes to stderr then
+    report = sys.stderr if to_console else sys.stdout
+    destination = "SVG" if to_console else f"Wrote {options.output}"
+    print(f"{destination}: {layout.width:.1f} x {layout.height:.1f} mm, {layout.lines} line(s), "
+          f"{len(layout.glyphs)} glyphs from font {font.name!r}", file=report)
     if font.x_height:
-        print(f"Scale {layout.scale:.3g}: small letters are {font.x_height * layout.scale:.2f} mm tall")
+        print(f"Scale {layout.scale:.3g}: small letters are {font.x_height * layout.scale:.2f} mm tall", file=report)
     if layout.missing:
-        print(f"Missing characters (skipped): {' '.join(sorted(layout.missing))}")
+        print(f"Missing characters (skipped): {' '.join(sorted(layout.missing))}", file=report)
 
 
 if __name__ == "__main__":

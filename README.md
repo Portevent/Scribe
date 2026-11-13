@@ -30,14 +30,14 @@ python3 main.py assets/font.svg "Hello world" -o hello.svg --x-height 2
 ### Command line
 
 ```
-python3 main.py FONT (TEXT | --text-file FILE) -o OUTPUT.svg [options]
+python3 main.py FONT (TEXT | --text-file FILE) [-o OUTPUT.svg] [options]
 ```
 
 `FONT` is an Inkscape SVG file or a folder of SVG glyphs.
 
 | Option | Default | Description |
 |---|---|---|
-| `-o`, `--output` | — | SVG file to write (required). |
+| `-o`, `--output` | console | SVG file to write. Without it (or with `-`), the SVG is printed to the console. |
 | `--text-file FILE` | — | Read the text from a UTF-8 file instead of the command line. |
 | `--width MM` | 210 | Page width. |
 | `--margin MM` | 10 | Margin on every side. |
@@ -60,10 +60,14 @@ python3 main.py assets/font.svg "Hello world" -o hello.svg --x-height 2 --width 
 
 # A longer text read from a file
 python3 main.py assets/font.svg --text-file resume.txt -o letter.svg --x-height 3
+
+# No -o: the SVG is printed to the console, ready to be piped
+python3 main.py assets/font.svg "Hello world" --x-height 2 > hello.svg
 ```
 
-The command prints the size of the drawing, the scale used and the resulting x-height, and the
-characters the font couldn't provide.
+The command reports the size of the drawing, the scale used and the resulting x-height, and the
+characters the font couldn't provide. When the SVG is printed to the console, this report goes to
+the error output (stderr) so that the console output stays a valid SVG document.
 
 ### Inspecting a font
 
@@ -80,10 +84,15 @@ and parser warnings (badly labelled objects, empty glyphs…). Run it after edit
 ```python
 from layout import LayoutSettings
 from parsers import InkscapeParser
-from render import SvgRenderer, write_text
+from render import SvgRenderer, render_text, write_text
 
 font = InkscapeParser().parse("assets/font.svg")
 settings = LayoutSettings(width=100, margin=5, x_height=2, seed=1)
+
+# Write a file
 layout = write_text(font, "Hello world", "hello.svg", settings, SvgRenderer(stroke_width=0.2))
 print(layout.lines, layout.missing)
+
+# Or get the SVG document as a string
+svg, layout = render_text(font, "Hello world", settings)
 ```
