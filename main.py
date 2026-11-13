@@ -37,7 +37,11 @@ def main():
     settings.add_argument("--width", type=float, default=defaults.width, help=f"default {defaults.width}")
     settings.add_argument("--margin", type=float, default=defaults.margin, help=f"default {defaults.margin}")
     settings.add_argument("--no-wrap", action="store_true", help="only go to a new line on line breaks of the text")
-    settings.add_argument("--scale", type=float, default=defaults.scale, help="glyph size multiplier")
+    settings.add_argument("--letter-spacing", type=float, default=defaults.letter_spacing,
+                          help="extra space between letters (can be negative)")
+    size = settings.add_mutually_exclusive_group()
+    size.add_argument("--x-height", type=float, help="height of small letters like 'x' (sets the scale)")
+    size.add_argument("--scale", type=float, default=defaults.scale, help="glyph size multiplier")
     settings.add_argument("--line-height", type=float, help="distance between lines (default: from the font)")
     settings.add_argument("--space", type=float, help="width of a space (default: from the font)")
     settings.add_argument("--jitter", type=float, default=defaults.jitter, help="random variation, e.g. 0.05")
@@ -49,7 +53,8 @@ def main():
     text = FilePath(options.text_file).read_text(encoding="utf-8") if options.text_file else options.text
     try:
         layout_settings = LayoutSettings(
-            width=options.width, margin=options.margin, auto_wrap=not options.no_wrap, scale=options.scale,
+            width=options.width, margin=options.margin, auto_wrap=not options.no_wrap, scale=options.scale, x_height=options.x_height,
+            letter_spacing=options.letter_spacing,
             line_height=options.line_height, space_width=options.space, jitter=options.jitter, seed=options.seed,
             on_missing="raise" if options.strict else "skip",
         )
@@ -60,6 +65,8 @@ def main():
 
     print(f"Wrote {options.output}: {layout.width:.1f} x {layout.height:.1f} mm, {layout.lines} line(s), "
           f"{len(layout.glyphs)} glyphs from font {font.name!r}")
+    if font.x_height:
+        print(f"Scale {layout.scale:.3g}: small letters are {font.x_height * layout.scale:.2f} mm tall")
     if layout.missing:
         print(f"Missing characters (skipped): {' '.join(sorted(layout.missing))}")
 

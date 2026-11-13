@@ -36,17 +36,18 @@ class _Run:
         self.rng = random.Random(settings.seed)
         self.content_width = settings.width - 2 * settings.margin
 
+        self.scale = _scale(font, settings)
         ascent, descent, median_advance = _metrics(font)
-        self.ascent = ascent * settings.scale
-        self.descent = descent * settings.scale
+        self.ascent = ascent * self.scale
+        self.descent = descent * self.scale
         self.line_height = settings.line_height if settings.line_height is not None \
             else LINE_SPACING * (self.ascent + self.descent)
         if settings.space_width is not None:
             self.space_width = settings.space_width
         elif " " in font:
-            self.space_width = font.get(" ").advance_x * settings.scale
+            self.space_width = font.get(" ").advance_x * self.scale
         else:
-            self.space_width = SPACE_RATIO * median_advance * settings.scale
+            self.space_width = SPACE_RATIO * median_advance * self.scale
 
         self.glyphs: list[PlacedGlyph] = []
         self.missing: set[str] = set()
@@ -67,6 +68,7 @@ class _Run:
             height=self.baseline() + self.descent + margin,
             lines=self.line + 1,
             missing=frozenset(self.missing),
+            scale=self.scale,
         )
 
     def typeset_line(self, line: str):
@@ -79,18 +81,27 @@ class _Run:
                 continue
 
             characters = [character for character in map(self.character, token) if character is not None]
-            word_width = sum(self.advance(character) for character in characters)
+            gaps = [0.0] + [self.gap(previous, following) for previous, following in zip(characters, characters[1:])]
+            word_width = sum(self.advance(character) for character in characters) + sum(gaps)
             if self.should_wrap(pending_space + word_width):
                 self.new_line()
                 wrapped, pending_space = True, 0.0
             self.x += pending_space
             pending_space = 0.0
 
-            for character in characters:
-                if self.should_wrap(self.advance(character)):  # Only a word longer than a line gets here
+            for character, gap in zip(characters, gaps):
+                if self.should_wrap(gap + self.advance(character)):  # Only a word longer than a line gets here
                     self.new_line()
                     wrapped = True
+                else:
+                    self.x += gap
                 self.place(character)
+
+    def gap(self, previous: Character, following: Character) -> float:
+        """Letter spacing between two glyphs of a word (none inside joined handwriting)"""
+        if previous.connects_out and following.connects_in:
+            return 0.0
+        return self.settings.letter_spacing
 
     def should_wrap(self, width: float) -> bool:
         return self.settings.auto_wrap and self.x > 0 and self.x + width > self.content_width + 1e-9
@@ -105,10 +116,10 @@ class _Run:
             return None
 
     def advance(self, character: Character) -> float:
-        return character.advance_x * self.settings.scale
+        return character.advance_x * self.scale
 
     def place(self, character: Character):
-        path = character.path.scale(self.settings.scale)
+        path = character.path.scale(self.scale)
         if self.settings.jitter:
             jitter = self.settings.jitter
             path = path.map_coordinates(lambda value, role: value * (1 + (self.rng.random() - 0.5) * jitter))
@@ -123,6 +134,16 @@ class _Run:
 
     def baseline(self) -> float:
         return self.settings.margin + self.ascent + self.line * self.line_height
+
+
+def _scale(font: Font, settings: LayoutSettings) -> float:
+    """Glyph scale: given directly, or derived from the wanted x-height"""
+    if settings.x_height is None:
+        return settings.scale
+    font_x_height = font.x_height
+    if not font_x_height:
+        raise ValueError(f"Font {font.name!r} has no lowercase letter to measure its x-height")
+    return settings.x_height / font_x_height
 
 
 def _metrics(font: Font) -> tuple[float, float, float]:

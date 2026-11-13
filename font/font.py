@@ -1,6 +1,11 @@
 import random
+import statistics
 
 from font.character import Character
+
+
+# Lowercase letters with a flat top and no ascender: their height is the x-height
+X_HEIGHT_REFERENCES = "xzvwunmr"
 
 
 class MissingCharacterError(KeyError):
@@ -41,6 +46,19 @@ class Font:
         if char not in self._characters:
             raise MissingCharacterError(char)
         return list(self._characters[char])
+
+    @property
+    def x_height(self) -> float | None:
+        """
+        Height of the small letters above the baseline (font units): median top of the flat lowercase
+        letters (x, z, v...), or of every lowercase letter if there is none. None without lowercase letters.
+        """
+        for chars in (X_HEIGHT_REFERENCES, [char for char in self._characters if char.islower()]):
+            heights = [-character.bounds.min_y for char in chars if char in self._characters
+                       for character in self._characters[char] if character.bounds is not None]
+            if heights:
+                return statistics.median(heights)
+        return None
 
     @property
     def chars(self) -> set[str]:

@@ -43,6 +43,8 @@ def print_summary(font: Font, problems: list[str]):
         counts[continuity(character)] = counts.get(continuity(character), 0) + 1
 
     print(f"\nFont {font.name!r}: {len(font)} characters, {len(characters)} glyphs (variants included)")
+    x_height = font.x_height
+    print(f"x-height: {x_height:.2f}" if x_height is not None else "x-height: - (no lowercase letter)")
     for kind, count in sorted(counts.items()):
         print(f"  {kind}: {count}")
 
@@ -61,7 +63,7 @@ def print_summary(font: Font, problems: list[str]):
 def main():
     arguments = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0])
     arguments.add_argument("file", nargs="?", default=DEFAULT_FILE, help=f"Inkscape SVG file (default {DEFAULT_FILE})")
-    arguments.add_argument("--spacing", type=float, default=0.0, help="letter spacing in millimetres")
+    arguments.add_argument("--spacing", type=float, help="letter spacing in millimetres (default: from row height)")
     arguments.add_argument("--scale", type=float, default=1.0, help="output scale (1 = millimetres)")
     options = arguments.parse_args()
 

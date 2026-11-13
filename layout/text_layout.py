@@ -11,6 +11,7 @@ class TextLayout:
     height: float
     lines: int
     missing: frozenset[str] = field(default_factory=frozenset)  # Characters the font couldn't provide
+    scale: float = 1.0  # Scale applied to the font's glyphs
 
     @property
     def text(self) -> str:

@@ -25,7 +25,8 @@ UNIT_TO_MM = {"mm": 1.0, "cm": 10.0, "q": 0.25, "in": 25.4, "pt": 25.4 / 72, "pc
 _LENGTH_RE = re.compile(r"\s*([-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?)\s*([a-zA-Z]*)\s*$")
 
 ROW_OVERLAP_RATIO = 0.5  # Glyphs sharing more than this ratio of the smaller height are on the same row
-BASELINE_TOLERANCE_RATIO = 0.05  # Bottoms closer than this ratio of the row height are on the same line
+BASELINE_TOLERANCE_RATIO = 0.05
+DEFAULT_SPACING_RATIO = 0.1  # Default letter spacing, relative to the median glyph height of a row  # Bottoms closer than this ratio of the row height are on the same line
 
 
 @dataclass
@@ -52,13 +53,14 @@ class InkscapeParser(FontParser):
     - The baseline of a row is the most common bottom of its glyphs (round overshoots are tolerated,
       descenders are outvoted).
     - A glyph starts at (left of its bounding box, baseline) and advances by its width + letter_spacing.
+      By default letter_spacing is DEFAULT_SPACING_RATIO x the median glyph height of the row.
     - Output coordinates are in millimetres (from the document width / viewBox), multiplied by scale.
     - Transforms are supported if they only scale and translate.
     """
 
-    def __init__(self, letter_spacing: float = 0.0, scale: float = 1.0, curve_steps: int = 16):
+    def __init__(self, letter_spacing: float | None = None, scale: float = 1.0, curve_steps: int = 16):
         """
-        :param letter_spacing: Space added after each glyph, in millimetres
+        :param letter_spacing: Natural space after each glyph, in millimetres (None: proportional to the row height)
         :param scale: Multiplies output coordinates (e.g. 10 to work in tenths of millimetres)
         :param curve_steps: Precision of the curve approximation used for bounding boxes
         """
@@ -76,9 +78,12 @@ class InkscapeParser(FontParser):
         self._collect(root, Transform(unit, unit), glyphs)
 
         font = Font(FilePath(fspath(source)).stem if isinstance(source, (str, PathLike)) else "")
-        spacing = self.letter_spacing * self.scale
         for row in _rows(glyphs):
             baseline = _baseline(row)
+            if self.letter_spacing is None:
+                spacing = DEFAULT_SPACING_RATIO * statistics.median(glyph.box.height for glyph in row)
+            else:
+                spacing = self.letter_spacing * self.scale
             for glyph in row:
                 origin = Point(glyph.box.min_x, baseline)
                 exit_point = Point(glyph.box.max_x + spacing, baseline)
