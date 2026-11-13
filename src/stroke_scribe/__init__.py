@@ -6,7 +6,7 @@ from stroke_scribe.layout import LayoutSettings, TextLayout, Typesetter
 from stroke_scribe.parsers import InkscapeParser, SvgFolderParser
 from stroke_scribe.render import SvgRenderer, render_text, write_text
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
 #: Path of the example Inkscape font shipped with the package
 EXAMPLE_FONT = str(files("stroke_scribe") / "assets" / "font.svg")
