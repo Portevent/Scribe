@@ -1,8 +1,8 @@
 from os import PathLike
 from xml.sax.saxutils import quoteattr
 
-from geometry import Path, Segment
-from layout import TextLayout
+from stroke_scribe.geometry import Path, Segment
+from stroke_scribe.layout import TextLayout
 
 
 class SvgRenderer:

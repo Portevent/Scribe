@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from geometry.point import Point
-from geometry.role import ROLES, Role
+from stroke_scribe.geometry.point import Point
+from stroke_scribe.geometry.role import ROLES, Role
 
 
 @dataclass(frozen=True)

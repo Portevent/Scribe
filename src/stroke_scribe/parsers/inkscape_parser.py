@@ -6,9 +6,9 @@ from dataclasses import dataclass
 from os import PathLike, fspath
 from pathlib import Path as FilePath
 
-from font import Character, Font
-from geometry import BoundingBox, Path, Point, Transform
-from parsers.font_parser import FontParser, FontSource
+from stroke_scribe.font import Character, Font
+from stroke_scribe.geometry import BoundingBox, Path, Point, Transform
+from stroke_scribe.parsers.font_parser import FontParser, FontSource
 
 SVG_NS = "http://www.w3.org/2000/svg"
 INKSCAPE_NS = "http://www.inkscape.org/namespaces/inkscape"

@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stroke-scribe"
+dynamic = ["version"]
+description = "Write text with a stroke font and produce SVG drawings for pen plotters"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Portevent" }]
+keywords = ["svg", "font", "stroke font", "pen plotter", "handwriting"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Topic :: Multimedia :: Graphics",
+]
+
+[project.scripts]
+stroke-scribe = "stroke_scribe.cli:main"
+stroke-scribe-inspect = "stroke_scribe.inspect_font:main"
+
+ [project.urls]
+ Homepage = "https://github.com/Portevent/Scribe"
+
+[tool.setuptools.dynamic]
+version = { attr = "stroke_scribe.__version__" }
+
+[tool.setuptools.package-data]
+stroke_scribe = ["assets/*.svg"]

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from os import PathLike
 from typing import IO
 
-from font import Font
+from stroke_scribe.font import Font
 
 FontSource = str | PathLike | IO
 

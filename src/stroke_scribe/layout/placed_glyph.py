@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from font import Character
-from geometry import Path, Point
+from stroke_scribe.font import Character
+from stroke_scribe.geometry import Path, Point
 
 
 @dataclass(frozen=True)

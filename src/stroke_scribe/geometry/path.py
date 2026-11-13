@@ -8,11 +8,11 @@ Reference: https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/
 import re
 from typing import Callable, Iterable, Iterator
 
-from geometry import flatten
-from geometry.bounding_box import BoundingBox
-from geometry.point import Point
-from geometry.role import ROLES, Role
-from geometry.segment import Segment
+from stroke_scribe.geometry import flatten
+from stroke_scribe.geometry.bounding_box import BoundingBox
+from stroke_scribe.geometry.point import Point
+from stroke_scribe.geometry.role import ROLES, Role
+from stroke_scribe.geometry.segment import Segment
 
 _COMMAND_LETTERS = "MmZzLlHhVvCcSsQqTtAa"
 _COMMAND_RE = re.compile(rf"([{_COMMAND_LETTERS}])([^{_COMMAND_LETTERS}]*)")

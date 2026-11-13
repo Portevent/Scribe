@@ -2,11 +2,11 @@ import random
 import re
 import statistics
 
-from font import Character, Font, MissingCharacterError
-from geometry import Path, Point
-from layout.layout_settings import LayoutSettings
-from layout.placed_glyph import PlacedGlyph
-from layout.text_layout import TextLayout
+from stroke_scribe.font import Character, Font, MissingCharacterError
+from stroke_scribe.geometry import Path, Point
+from stroke_scribe.layout.layout_settings import LayoutSettings
+from stroke_scribe.layout.placed_glyph import PlacedGlyph
+from stroke_scribe.layout.text_layout import TextLayout
 
 LINE_SPACING = 1.2  # Default line height = LINE_SPACING x (highest ascent + deepest descent)
 SPACE_RATIO = 0.5  # Default space width = SPACE_RATIO x median glyph advance

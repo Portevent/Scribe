@@ -4,7 +4,7 @@ Every function takes absolute coordinates.
 """
 import math
 
-from geometry.point import Point
+from stroke_scribe.geometry.point import Point
 
 
 def cubic(p0: Point, p1: Point, p2: Point, p3: Point, steps: int) -> list[Point]:

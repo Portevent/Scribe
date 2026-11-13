@@ -1,7 +1,7 @@
 from os import PathLike
 
-from font import Font
-from layout import LayoutSettings, TextLayout, Typesetter
+from stroke_scribe.font import Font
+from stroke_scribe.layout import LayoutSettings, TextLayout, Typesetter
 from .svg_renderer import SvgRenderer
 
 __all__ = ["SvgRenderer", "render_text", "write_text"]

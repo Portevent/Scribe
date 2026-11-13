@@ -2,7 +2,7 @@ import math
 import re
 from dataclasses import dataclass
 
-from geometry.path import Path
+from stroke_scribe.geometry.path import Path
 
 _FUNCTION_RE = re.compile(r"\s*([a-zA-Z]+)\s*\(([^)]*)\)\s*,?")
 _NUMBER_SPLIT_RE = re.compile(r"[\s,]+")

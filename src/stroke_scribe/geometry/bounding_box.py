@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Iterable
 
-from geometry.point import Point
+from stroke_scribe.geometry.point import Point
 
 
 @dataclass(frozen=True)

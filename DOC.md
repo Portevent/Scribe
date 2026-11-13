@@ -8,7 +8,7 @@
 | `parsers/` | Font loaders: `InkscapeParser`, `SvgFolderParser`. |
 | `layout/` | `LayoutSettings`, `Typesetter` (line breaking and placement), `TextLayout`. |
 | `render/` | `SvgRenderer` and `write_text`. |
-| `main.py`, `inspect_font.py` | Command-line tools. |
+| `stroke_scribe/cli.py`, `stroke_scribe/inspect_font.py` | Command-line tools. |
 | `tests/` | Unit tests. |
 | `docs/TECHNICAL.md` | How the library works internally. |
 

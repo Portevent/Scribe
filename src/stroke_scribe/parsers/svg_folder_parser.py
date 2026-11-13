@@ -2,10 +2,10 @@ import re
 from os import PathLike, fspath
 from pathlib import Path as FilePath
 
-from font import Character, Font
-from font.character import ANCHOR
-from geometry import Path, Point
-from parsers.font_parser import FontParser
+from stroke_scribe.font import Character, Font
+from stroke_scribe.font.character import ANCHOR
+from stroke_scribe.geometry import Path, Point
+from stroke_scribe.parsers.font_parser import FontParser
 
 _PATH_DATA_RE = re.compile(r'\sd="([^"]*)"')
 

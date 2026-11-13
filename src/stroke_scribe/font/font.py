@@ -1,7 +1,7 @@
 import random
 import statistics
 
-from font.character import Character
+from stroke_scribe.font.character import Character
 
 
 # Lowercase letters with a flat top and no ascender: their height is the x-height

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from functools import cached_property
 
-from geometry import BoundingBox, Path, Point, Segment
+from stroke_scribe.geometry import BoundingBox, Path, Point, Segment
 
 # Default point where the pen enters a glyph, in legacy asset coordinates.
 # Connected glyphs start and end on its baseline.

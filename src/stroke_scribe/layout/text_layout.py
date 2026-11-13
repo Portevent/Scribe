@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from layout.placed_glyph import PlacedGlyph
+from stroke_scribe.layout.placed_glyph import PlacedGlyph
 
 
 @dataclass(frozen=True)

@@ -6,8 +6,18 @@ The result is meant to be drawn by a pen plotter or a cutting machine, or used a
 A stroke font is a set of SVG path per letter.
 
 ```
-python3 main.py assets/font.svg "Hello world" -o hello.svg --x-height 2
+stroke-scribe font.svg "Hello world" -o hello.svg --x-height 2
 ```
+
+## Installation
+
+```
+pip install stroke-scribe
+```
+
+This installs two commands, `stroke-scribe` and `stroke-scribe-inspect`, and the `stroke_scribe`
+Python package. An example font is bundled: its path is `stroke_scribe.EXAMPLE_FONT`
+(`python3 -c "import stroke_scribe; print(stroke_scribe.EXAMPLE_FONT)"`).
 
 ## Features
 
@@ -30,7 +40,7 @@ python3 main.py assets/font.svg "Hello world" -o hello.svg --x-height 2
 ### Command line
 
 ```
-python3 main.py FONT (TEXT | --text-file FILE) [-o OUTPUT.svg] [options]
+stroke-scribe FONT (TEXT | --text-file FILE) [-o OUTPUT.svg] [options]
 ```
 
 `FONT` is an Inkscape SVG file or a folder of SVG glyphs.
@@ -56,13 +66,13 @@ Examples:
 
 ```
 # Small letters 2 mm tall, on a 100 mm wide label
-python3 main.py assets/font.svg "Hello world" -o hello.svg --x-height 2 --width 100 --margin 5
+stroke-scribe font.svg "Hello world" -o hello.svg --x-height 2 --width 100 --margin 5
 
 # A longer text read from a file
-python3 main.py assets/font.svg --text-file resume.txt -o letter.svg --x-height 3
+stroke-scribe font.svg --text-file resume.txt -o letter.svg --x-height 3
 
 # No -o: the SVG is printed to the console, ready to be piped
-python3 main.py assets/font.svg "Hello world" --x-height 2 > hello.svg
+stroke-scribe font.svg "Hello world" --x-height 2 > hello.svg
 ```
 
 The command reports the size of the drawing, the scale used and the resulting x-height, and the
@@ -72,7 +82,7 @@ the error output (stderr) so that the console output stays a valid SVG document.
 ### Inspecting a font
 
 ```
-python3 inspect_font.py references/raw/mtg.svg
+stroke-scribe-inspect references/raw/mtg.svg
 ```
 
 Prints every glyph found in an Inkscape font with its metrics (advance, width, ascent, descent,
@@ -82,11 +92,11 @@ and parser warnings (badly labelled objects, empty glyphs…). Run it after edit
 ### From Python
 
 ```python
-from layout import LayoutSettings
-from parsers import InkscapeParser
-from render import SvgRenderer, render_text, write_text
+from stroke_scribe.layout import LayoutSettings
+from stroke_scribe.parsers import InkscapeParser
+from stroke_scribe.render import SvgRenderer, render_text, write_text
 
-font = InkscapeParser().parse("assets/font.svg")
+font = InkscapeParser().parse("font.svg")
 settings = LayoutSettings(width=100, margin=5, x_height=2, seed=1)
 
 # Write a file

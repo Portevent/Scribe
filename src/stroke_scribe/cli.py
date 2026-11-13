@@ -2,18 +2,18 @@
 Write a text with a handwritten font into an SVG file.
 
 Examples:
-  python3 main.py references/raw/mtg.svg "Hello world" -o hello.svg --width 100
-  python3 main.py references/raw/SVG --text-file text.txt -o letter.svg --jitter 0.05
-  python3 main.py references/raw/mtg.svg "Hello" > hello.svg   (no -o: the SVG goes to the console)
+  stroke-scribe font.svg "Hello world" -o hello.svg --width 100
+  stroke-scribe glyphs/ --text-file text.txt -o letter.svg --jitter 0.05
+  stroke-scribe font.svg "Hello" > hello.svg   (no -o: the SVG goes to the console)
 """
 import argparse
 import sys
 from pathlib import Path as FilePath
 
-from font import Font
-from layout import LayoutSettings
-from parsers import InkscapeParser, SvgFolderParser
-from render import SvgRenderer, render_text
+from stroke_scribe.font import Font
+from stroke_scribe.layout import LayoutSettings
+from stroke_scribe.parsers import InkscapeParser, SvgFolderParser
+from stroke_scribe.render import SvgRenderer, render_text
 
 
 def load_font(source: str) -> Font:
@@ -24,7 +24,7 @@ def load_font(source: str) -> Font:
 
 
 def main():
-    arguments = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0],
+    arguments = argparse.ArgumentParser(prog="stroke-scribe", description=__doc__.strip().splitlines()[0],
                                         epilog="\n".join(__doc__.strip().splitlines()[1:]),
                                         formatter_class=argparse.RawDescriptionHelpFormatter)
     arguments.add_argument("font", help="Inkscape SVG font file, or folder of SVG glyphs")

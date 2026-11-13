@@ -1,16 +1,17 @@
 """
 Parse an Inkscape font file and print what the parser understood, glyph by glyph.
 
-Usage: python3 inspect_font.py [file.svg] [--spacing MM] [--scale K]
+Usage: stroke-scribe-inspect [file.svg] [--spacing MM] [--scale K]
 """
 import argparse
 import string
 import warnings
+from importlib.resources import files
 
-from font import Character, Font
-from parsers import InkscapeParser
+from stroke_scribe.font import Character, Font
+from stroke_scribe.parsers import InkscapeParser
 
-DEFAULT_FILE = "references/raw/mtg.svg"
+DEFAULT_FILE = str(files("stroke_scribe") / "assets" / "font.svg")
 EXPECTED = string.ascii_lowercase + string.ascii_uppercase
 
 
@@ -61,8 +62,8 @@ def print_summary(font: Font, problems: list[str]):
 
 
 def main():
-    arguments = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0])
-    arguments.add_argument("file", nargs="?", default=DEFAULT_FILE, help=f"Inkscape SVG file (default {DEFAULT_FILE})")
+    arguments = argparse.ArgumentParser(prog="stroke-scribe-inspect", description=__doc__.strip().splitlines()[0])
+    arguments.add_argument("file", nargs="?", default=DEFAULT_FILE, help="Inkscape SVG file (default: the bundled example font)")
     arguments.add_argument("--spacing", type=float, help="letter spacing in millimetres (default: from row height)")
     arguments.add_argument("--scale", type=float, default=1.0, help="output scale (1 = millimetres)")
     options = arguments.parse_args()

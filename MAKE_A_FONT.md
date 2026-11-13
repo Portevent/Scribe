@@ -7,7 +7,7 @@
    become variants.
 3. Put letters that share a baseline on the same row; descenders (`g`, `p`, `y`…) may go below it.
 4. Only translations and scales are supported as transforms (no rotation or skew).
-5. Check the result with `inspect_font.py`.
+5. Check the result with `stroke-scribe-inspect`.
 
 The space between letters is computed from the row height; it can be adjusted with
 `--letter-spacing`.
